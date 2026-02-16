@@ -2,7 +2,7 @@
 
 Веб-рандомайзер для выбора стартовых позиций и замков в Heroes of Might and Magic III (HotA).
 
-🎲 **Live Demo:** [https://blaiseverse.ru/h3random/](https://blaiseverse.ru/h3random/)
+🎲 **Live Demo:** [https://vi-zhe.github.io/h3random/](https://vi-zhe.github.io/h3random/)
 
 ![Heroes III Randomizer](https://img.shields.io/badge/Heroes_III-Randomizer-gold?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
@@ -21,7 +21,7 @@
 
 ### Онлайн версия
 
-Просто откройте [https://blaiseverse.ru/h3random/](https://blaiseverse.ru/h3random/) в браузере.
+Просто откройте [https://vi-zhe.github.io/h3random/](https://vi-zhe.github.io/h3random/) в браузере.
 
 ### Локальная версия
 
