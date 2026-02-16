@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heroes III — Рандомайзер</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #0a0a12;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(30, 15, 60, 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 50%, rgba(15, 30, 60, 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(60, 20, 10, 0.4) 0%, transparent 50%);
+    font-family: 'Cinzel', 'Georgia', serif;
+    color: #d4c5a0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    padding: 20px 0;
+  }
+
+  /* Floating particles */
+  .particles {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: radial-gradient(circle, rgba(255,215,100,0.8), transparent);
+    border-radius: 50%;
+    animation: float-up linear infinite;
+  }
+  @keyframes float-up {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 1600px;
+    max-width: 95vw;
+    padding: 30px;
+  }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 550px 1fr;
+    gap: 30px;
+    align-items: start;
+  }
+
+  @media (max-width: 1200px) {
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Title */
+  .title {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .title h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 2.4em;
+    background: linear-gradient(180deg, #ffd700, #c8960c, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3));
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .title .subtitle {
+    font-size: 0.85em;
+    color: #8a7d65;
+    margin-top: 5px;
+    letter-spacing: 2px;
+  }
+
+  /* Panel */
+  .panel {
+    background: linear-gradient(145deg, rgba(25, 20, 40, 0.95), rgba(15, 12, 30, 0.98));
+    border: 2px solid rgba(180, 150, 80, 0.3);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow:
+      0 0 30px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,215,0,0.1),
+      inset 0 -1px 0 rgba(0,0,0,0.3);
+  }
+  .panel-header {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #c8a84e;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(180, 150, 80, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-header .icon {
+    font-size: 1.3em;
+  }
+
+  /* Mode checkboxes */
+  .modes {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  .mode-option {
+    flex: 1;
+    min-width: 180px;
+  }
+  .mode-option input[type="checkbox"] {
+    display: none;
+  }
+  .mode-option label {
+    display: block;
+    padding: 14px 18px;
+    background: rgba(40, 30, 60, 0.6);
+    border: 2px solid rgba(100, 80, 50, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+    user-select: none;
+  }
+  .mode-option label:hover {
+    border-color: rgba(200, 168, 78, 0.5);
+    background: rgba(50, 40, 70, 0.8);
+  }
+  .mode-option input:checked + label {
+    border-color: #c8a84e;
+    background: rgba(200, 168, 78, 0.15);
+    color: #ffd700;
+    box-shadow: 0 0 15px rgba(200, 168, 78, 0.2), inset 0 0 15px rgba(200, 168, 78, 0.05);
+  }
+  .mode-desc {
+    font-size: 0.7em;
+    color: #8a7d65;
+    margin-top: 5px;
+    letter-spacing: 0;
+  }
+  .mode-option input:checked + label .mode-desc {
+    color: #b8a060;
+  }
+
+  /* Castle selection grid */
+  .castle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .castle-option {
+    position: relative;
+  }
+  .castle-option input[type="checkbox"] {
+    display: none;
+  }
+  .castle-option label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: rgba(40, 30, 60, 0.6);
+    border: 2px solid rgba(100, 80, 50, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .castle-option label:hover {
+    border-color: rgba(200, 168, 78, 0.5);
+    background: rgba(50, 40, 70, 0.8);
+  }
+  .castle-option input:checked + label {
+    border-color: #c8a84e;
+    background: rgba(200, 168, 78, 0.15);
+    box-shadow: 0 0 15px rgba(200, 168, 78, 0.2);
+  }
+  .castle-option input:not(:checked) + label {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+  }
+  .castle-option input:not(:checked) + label::after {
+    content: '✕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    color: rgba(200, 80, 60, 0.8);
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
+  .castle-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 6px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+  .castle-label {
+    font-size: 0.75em;
+    letter-spacing: 1px;
+    color: #d4c5a0;
+    text-align: center;
+  }
+  .castle-option input:checked + label .castle-label {
+    color: #ffd700;
+  }
+
+  .castle-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+  }
+  .castle-btn {
+    padding: 6px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75em;
+    letter-spacing: 1px;
+    color: #d4c5a0;
+    background: rgba(40, 30, 60, 0.6);
+    border: 1px solid rgba(100, 80, 50, 0.3);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .castle-btn:hover {
+    border-color: rgba(200, 168, 78, 0.6);
+    background: rgba(50, 40, 70, 0.8);
+    color: #ffd700;
+  }
+
+  /* Results area */
+  .results-panel {
+    min-height: 300px;
+  }
+  .results-panel .panel-header,
+  .results-panel .results-section,
+  .results-panel .rp-quote,
+  .results-panel .progress-container {
+    display: none;
+  }
+  .results-panel.active .panel-header,
+  .results-panel.active .results-section,
+  .results-panel.active .progress-container {
+    display: block;
+  }
+  .results-panel.active .rp-quote {
+    display: flex;
+  }
+  .results-section {
+    margin-top: 10px;
+  }
+  .result-group {
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: all 0.5s ease;
+  }
+  .result-group.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .result-group-title {
+    font-size: 0.85em;
+    color: #8a7d65;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  /* Slot display */
+  .slots {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .slot {
+    width: 100px;
+    height: 100px;
+    background: rgba(10, 8, 20, 0.8);
+    border: 3px solid rgba(100, 80, 50, 0.4);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5em;
+    font-weight: 900;
+    color: #555;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .slot::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 30%;
+    background: linear-gradient(to bottom, rgba(10,8,20,0.9), transparent);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .slot::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 30%;
+    background: linear-gradient(to top, rgba(10,8,20,0.9), transparent);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .slot.spinning {
+    border-color: rgba(200, 168, 78, 0.6);
+    box-shadow: 0 0 20px rgba(200, 168, 78, 0.2);
+  }
+  .slot.done {
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.05);
+    animation: slot-glow 2s ease-in-out infinite;
+  }
+  @keyframes slot-glow {
+    0%, 100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.05); }
+    50% { box-shadow: 0 0 35px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.1); }
+  }
+  .slot-value {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .slot-label {
+    font-size: 0.3em;
+    color: #8a7d65;
+    letter-spacing: 1px;
+    font-weight: 400;
+  }
+  .slot.done .slot-label {
+    color: #b8a060;
+  }
+
+  /* Castle slots */
+  .slot.castle-slot {
+    width: 130px;
+    height: 130px;
+    font-size: 1em;
+    background: rgba(10, 8, 20, 0.9);
+  }
+  .castle-slot-img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    filter: brightness(0.3);
+    transition: filter 0.3s;
+  }
+  .slot.castle-slot.done .castle-slot-img {
+    filter: brightness(1) drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+  }
+  .castle-name {
+    font-size: 0.75em;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    margin-top: 4px;
+  }
+
+  /* Progress bar */
+  .progress-container {
+    margin-top: 15px;
+    height: 4px;
+    background: rgba(40, 30, 60, 0.6);
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .progress-container.active {
+    opacity: 1;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #c8960c, #ffd700, #c8960c);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
+
+  /* Button */
+  .btn-container {
+    text-align: center;
+    margin-top: 5px;
+  }
+  .btn-roll {
+    padding: 16px 50px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1.1em;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #1a1510;
+    background: linear-gradient(180deg, #ffd700, #c8960c, #a07008);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow:
+      0 4px 15px rgba(200, 150, 12, 0.4),
+      inset 0 1px 0 rgba(255,255,255,0.3),
+      inset 0 -2px 0 rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-roll::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255,255,255,0.15) 50%,
+      transparent 70%
+    );
+    animation: btn-shine 3s ease-in-out infinite;
+  }
+  @keyframes btn-shine {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+  }
+  .btn-roll:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 25px rgba(200, 150, 12, 0.6),
+      inset 0 1px 0 rgba(255,255,255,0.3),
+      inset 0 -2px 0 rgba(0,0,0,0.2);
+  }
+  .btn-roll:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 2px 8px rgba(200, 150, 12, 0.3),
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      inset 0 -1px 0 rgba(0,0,0,0.2);
+  }
+  .btn-roll:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .error-msg {
+    text-align: center;
+    color: #cc6644;
+    font-size: 0.85em;
+    margin-top: 10px;
+    min-height: 1.2em;
+  }
+
+  /* RP Quote */
+  .rp-quote {
+    text-align: center;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(40, 30, 60, 0.4);
+    border: 1px solid rgba(200, 168, 78, 0.3);
+    border-radius: 8px;
+    font-style: italic;
+    font-size: 0.95em;
+    color: #d4c5a0;
+    line-height: 1.6;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s ease;
+  }
+  .rp-quote.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .rp-quote::before {
+    content: '"';
+    font-size: 2em;
+    color: rgba(200, 168, 78, 0.3);
+    margin-right: 10px;
+    line-height: 0.8;
+  }
+  .rp-quote::after {
+    content: '"';
+    font-size: 2em;
+    color: rgba(200, 168, 78, 0.3);
+    margin-left: 10px;
+    line-height: 0.8;
+  }
+
+  /* Position selection grid */
+  .position-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .position-option {
+    position: relative;
+  }
+  .position-option input[type="checkbox"] {
+    display: none;
+  }
+  .position-option label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    background: rgba(40, 30, 60, 0.6);
+    border: 2px solid rgba(100, 80, 50, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.8em;
+    font-weight: 900;
+    color: #8a7d65;
+    user-select: none;
+    position: relative;
+  }
+  .position-option label:hover {
+    border-color: rgba(200, 168, 78, 0.5);
+    background: rgba(50, 40, 70, 0.8);
+  }
+  .position-option input:checked + label {
+    border-color: #c8a84e;
+    background: rgba(200, 168, 78, 0.15);
+    color: #ffd700;
+    box-shadow: 0 0 15px rgba(200, 168, 78, 0.2);
+  }
+  .position-option input:not(:checked) + label::after {
+    content: '✕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    color: rgba(200, 80, 60, 0.6);
+    font-weight: 900;
+    pointer-events: none;
+  }
+
+  .position-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+  }
+  .position-btn {
+    padding: 6px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75em;
+    letter-spacing: 1px;
+    color: #d4c5a0;
+    background: rgba(40, 30, 60, 0.6);
+    border: 1px solid rgba(100, 80, 50, 0.3);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .position-btn:hover {
+    border-color: rgba(200, 168, 78, 0.6);
+    background: rgba(50, 40, 70, 0.8);
+    color: #ffd700;
+  }
+
+  /* Player count selector */
+  .player-count-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+  .player-count-label {
+    font-size: 0.85em;
+    color: #8a7d65;
+    letter-spacing: 1px;
+  }
+  .player-count-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .player-count-btn {
+    width: 40px; height: 40px;
+    background: rgba(40, 30, 60, 0.6);
+    border: 2px solid rgba(100, 80, 50, 0.3);
+    border-radius: 6px;
+    color: #d4c5a0;
+    font-family: 'Cinzel', serif;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .player-count-btn:hover {
+    border-color: rgba(200, 168, 78, 0.5);
+    background: rgba(50, 40, 70, 0.8);
+  }
+  .player-count-btn.active {
+    border-color: #c8a84e;
+    background: rgba(200, 168, 78, 0.15);
+    color: #ffd700;
+    box-shadow: 0 0 10px rgba(200, 168, 78, 0.2);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.65em;
+    color: rgba(138, 125, 101, 0.5);
+    letter-spacing: 2px;
+  }
+
+  /* Reveal animation */
+  @keyframes reveal-number {
+    0% { transform: scale(1.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .reveal {
+    animation: reveal-number 0.4s ease-out;
+  }
+
+  /* Player colors */
+  .player-color-1 { border-color: #ff0000 !important; color: #ff4444 !important; }
+  .player-color-2 { border-color: #3166ff !important; color: #5588ff !important; }
+  .player-color-3 { border-color: #ce9e73 !important; color: #e8ba91 !important; }
+  .player-color-4 { border-color: #00b300 !important; color: #44dd44 !important; }
+  .player-color-5 { border-color: #ff8400 !important; color: #ffaa44 !important; }
+  .player-color-6 { border-color: #ce31ce !important; color: #e855e8 !important; }
+  .player-color-7 { border-color: #00cece !important; color: #44e8e8 !important; }
+  .player-color-8 { border-color: #ff7bbd !important; color: #ffaadd !important; }
+
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="container">
+  <div class="title">
+    <h1>Heroes III</h1>
+    <div class="subtitle">Рандомайзер</div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Left column: Settings -->
+    <div class="settings-column">
+      <!-- Mode selection -->
+      <div class="panel">
+    <div class="panel-header">
+      <span class="icon">&#9881;</span> Режимы рандома
+    </div>
+    <div class="modes">
+      <div class="mode-option">
+        <input type="checkbox" id="mode-positions" checked>
+        <label for="mode-positions">
+          Стартовые позиции
+          <div class="mode-desc">Номера позиций (3–8)</div>
+        </label>
+      </div>
+      <div class="mode-option">
+        <input type="checkbox" id="mode-castles">
+        <label for="mode-castles">
+          Замки
+          <div class="mode-desc">Случайные фракции</div>
+        </label>
+      </div>
+      <div class="mode-option">
+        <input type="checkbox" id="mode-all">
+        <label for="mode-all">
+          Всё сразу
+          <div class="mode-desc">Позиции + замки</div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Castle selection -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="icon">🏰</span> Выбор замков
+    </div>
+    <div class="castle-grid" id="castle-grid"></div>
+    <div class="castle-controls">
+      <button class="castle-btn" onclick="selectAllCastles()">Выбрать все</button>
+      <button class="castle-btn" onclick="deselectAllCastles()">Снять все</button>
+    </div>
+  </div>
+
+  <!-- Position selection -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="icon">🎯</span> Выбор позиций
+    </div>
+    <div class="position-grid" id="position-grid"></div>
+    <div class="position-controls">
+      <button class="position-btn" onclick="selectAllPositions()">Выбрать все</button>
+      <button class="position-btn" onclick="deselectAllPositions()">Снять все</button>
+    </div>
+  </div>
+    </div><!-- End settings-column -->
+
+    <!-- Right column: Results -->
+    <div class="results-column">
+      <!-- Player count -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon">&#9823;</span> Количество игроков
+        </div>
+        <div class="player-count-section">
+          <span class="player-count-label">Игроков:</span>
+          <div class="player-count-btns" id="player-count-btns">
+            <button class="player-count-btn" data-count="2">2</button>
+            <button class="player-count-btn active" data-count="3">3</button>
+            <button class="player-count-btn" data-count="4">4</button>
+            <button class="player-count-btn" data-count="5">5</button>
+            <button class="player-count-btn" data-count="6">6</button>
+            <button class="player-count-btn" data-count="7">7</button>
+            <button class="player-count-btn" data-count="8">8</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="panel results-panel" id="results-panel">
+    <div class="panel-header">
+      <span class="icon">&#9733;</span> Результат
+    </div>
+
+    <div class="results-section" id="results-section">
+      <!-- Positions result -->
+      <div class="result-group" id="group-positions">
+        <div class="result-group-title">Стартовые позиции</div>
+        <div class="slots" id="slots-positions"></div>
+      </div>
+      <!-- Castles result -->
+      <div class="result-group" id="group-castles">
+        <div class="result-group-title">Замки</div>
+        <div class="slots" id="slots-castles"></div>
+      </div>
+    </div>
+
+    <div class="rp-quote" id="rp-quote"></div>
+
+    <div class="progress-container" id="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </div>
+
+      <!-- Button outside results panel -->
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="btn-container">
+        <button class="btn-roll" id="btn-roll" onclick="roll()">Бросить жребий</button>
+      </div>
+    </div><!-- End results-column -->
+  </div><!-- End main-layout -->
+
+  <div class="footer">HEROES OF MIGHT AND MAGIC III</div>
+</div>
+
+<script>
+const CASTLES = [
+  { id: 'castle', name: 'Castle', img: 'Castles/Town_portrait_Castle_small.png' },
+  { id: 'rampart', name: 'Rampart', img: 'Castles/Town_portrait_Rampart_small.png' },
+  { id: 'tower', name: 'Tower', img: 'Castles/Town_portrait_Tower_small.png' },
+  { id: 'inferno', name: 'Inferno', img: 'Castles/Town_portrait_Inferno_small.png' },
+  { id: 'necropolis', name: 'Necropolis', img: 'Castles/Town_portrait_Necropolis_small.png' },
+  { id: 'dungeon', name: 'Dungeon', img: 'Castles/Town_portrait_Dungeon_small.png' },
+  { id: 'stronghold', name: 'Stronghold', img: 'Castles/Town_portrait_Stronghold_small.png' },
+  { id: 'fortress', name: 'Fortress', img: 'Castles/Town_portrait_Fortress_small.png' },
+  { id: 'conflux', name: 'Conflux', img: 'Castles/Town_portrait_Conflux_small.png' },
+];
+
+const PLAYER_COLORS = [
+  '#ff0000', // Red
+  '#3166ff', // Blue
+  '#ce9e73', // Tan
+  '#00b300', // Green
+  '#ff8400', // Orange
+  '#ce31ce', // Purple
+  '#00cece', // Teal
+  '#ff7bbd', // Pink
+];
+
+// RP phrases based on team composition
+const RP_PHRASES = {
+  // Good/Light factions
+  good: ['Castle', 'Rampart', 'Tower'],
+  // Evil/Dark factions
+  evil: ['Inferno', 'Necropolis', 'Dungeon'],
+  // Neutral/Savage factions
+  neutral: ['Stronghold', 'Fortress'],
+  // Elemental faction
+  elemental: ['Conflux'],
+
+  // Phrases for different compositions
+  allGood: [
+    "Силы света объединились! Справедливость и честь ведут вас к победе!",
+    "Благородный союз рыцарей, магов и природы. Да пребудет с вами свет!",
+    "Священный альянс встал на защиту мира. Тьме не устоять!",
+    "Объединённые светом, вы несёте надежду всем народам!",
+  ],
+  allEvil: [
+    "Силы тьмы сплотились! Пусть мир содрогнётся перед вашей мощью!",
+    "Зловещий пакт заключён. Тёмные силы поглотят этот мир!",
+    "Адское пламя, нежить и подземные твари объединились. Ужас грядёт!",
+    "Союз зла непобедим. Склонитесь перед владыками тьмы!",
+  ],
+  allNeutral: [
+    "Дикие орды объединились! Сила и ярость - ваше оружие!",
+    "Первобытная мощь природы на вашей стороне. В бой!",
+    "Варвары и болотники встали плечом к плечу. Враги будут сметены!",
+  ],
+  mixed: [
+    "Невероятный альянс! Разные силы, одна цель - победа!",
+    "Необычный союз заключён. Непредсказуемость - ваше преимущество!",
+    "Разношёрстная коалиция готова к бою. Вместе вы непобедимы!",
+    "Силы из разных миров объединились. Пусть враги трепещут!",
+  ],
+  withConflux: [
+    "Стихии присоединились к альянсу! Власть над элементами дарует вам силу!",
+    "Элементали встали на вашу сторону. Огонь, вода, земля и воздух с вами!",
+  ],
+  twoPlayers: [
+    "Дуэль титанов начинается! Двое войдут, один победит!",
+    "Противостояние двух великих сил. Да начнётся эпическая битва!",
+  ],
+  manyPlayers: [
+    "Великий союз создан! Множество героев, одна армия!",
+    "Легендарная коалиция собралась. Вместе вы - непобедимая сила!",
+  ],
+};
+
+let playerCount = 3;
+let isRolling = false;
+let enabledCastles = new Set(CASTLES.map(c => c.id));
+let enabledPositions = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
+
+// Audio context for dice roll sound
+let audioContext = null;
+let diceRollSound = null;
+
+// Initialize audio on first user interaction
+function initAudio() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+// Generate dice roll sound effect
+function playDiceRollSound() {
+  if (!audioContext) return;
+
+  const now = audioContext.currentTime;
+  const duration = 0.15;
+
+  // Create oscillator for the "clack" sound
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  const filter = audioContext.createBiquadFilter();
+
+  oscillator.connect(filter);
+  filter.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  // Sharp attack, quick decay
+  oscillator.type = 'square';
+  oscillator.frequency.setValueAtTime(120, now);
+  oscillator.frequency.exponentialRampToValueAtTime(40, now + duration);
+
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(2000, now);
+  filter.frequency.exponentialRampToValueAtTime(100, now + duration);
+
+  gainNode.gain.setValueAtTime(0.15, now);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+  oscillator.start(now);
+  oscillator.stop(now + duration);
+}
+
+// Play rolling sound (multiple dice clacks)
+function playRollingSound(durationMs) {
+  if (!audioContext) return;
+
+  const interval = 80; // Time between dice clacks
+  const count = Math.floor(durationMs / interval);
+
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      playDiceRollSound();
+    }, i * interval);
+  }
+}
+
+// Particles
+(function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (6 + Math.random() * 10) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    p.style.width = (2 + Math.random() * 3) + 'px';
+    p.style.height = p.style.width;
+    container.appendChild(p);
+  }
+})();
+
+// Build position selection grid
+function buildPositionGrid() {
+  const grid = document.getElementById('position-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 8; i++) {
+    const div = document.createElement('div');
+    div.className = 'position-option';
+    div.innerHTML = `
+      <input type="checkbox" id="position-${i}" checked data-position="${i}">
+      <label for="position-${i}">${i}</label>
+    `;
+    grid.appendChild(div);
+
+    const checkbox = div.querySelector('input');
+    checkbox.addEventListener('change', () => {
+      const pos = parseInt(checkbox.dataset.position);
+      if (checkbox.checked) {
+        enabledPositions.add(pos);
+      } else {
+        enabledPositions.delete(pos);
+      }
+    });
+  }
+}
+
+function selectAllPositions() {
+  document.querySelectorAll('.position-option input').forEach(cb => {
+    cb.checked = true;
+    enabledPositions.add(parseInt(cb.dataset.position));
+  });
+}
+
+function deselectAllPositions() {
+  document.querySelectorAll('.position-option input').forEach(cb => {
+    cb.checked = false;
+    enabledPositions.delete(parseInt(cb.dataset.position));
+  });
+}
+
+// Build castle selection grid
+function buildCastleGrid() {
+  const grid = document.getElementById('castle-grid');
+  grid.innerHTML = '';
+  CASTLES.forEach(castle => {
+    const div = document.createElement('div');
+    div.className = 'castle-option';
+    div.innerHTML = `
+      <input type="checkbox" id="castle-${castle.id}" checked data-castle-id="${castle.id}">
+      <label for="castle-${castle.id}">
+        <img src="${castle.img}" alt="${castle.name}" class="castle-img" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect fill=%22%23333%22 width=%22100%25%22 height=%22100%25%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23999%22 text-anchor=%22middle%22 dy=%22.3em%22%3E${castle.name[0]}%3C/text%3E%3C/svg%3E'">
+        <div class="castle-label">${castle.name}</div>
+      </label>
+    `;
+    grid.appendChild(div);
+
+    const checkbox = div.querySelector('input');
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        enabledCastles.add(castle.id);
+      } else {
+        enabledCastles.delete(castle.id);
+      }
+    });
+  });
+}
+
+function selectAllCastles() {
+  document.querySelectorAll('.castle-option input').forEach(cb => {
+    cb.checked = true;
+    enabledCastles.add(cb.dataset.castleId);
+  });
+}
+
+function deselectAllCastles() {
+  document.querySelectorAll('.castle-option input').forEach(cb => {
+    cb.checked = false;
+    enabledCastles.delete(cb.dataset.castleId);
+  });
+}
+
+// Mode logic
+const modePositions = document.getElementById('mode-positions');
+const modeCastles = document.getElementById('mode-castles');
+const modeAll = document.getElementById('mode-all');
+
+modeAll.addEventListener('change', () => {
+  if (modeAll.checked) {
+    modePositions.checked = true;
+    modeCastles.checked = true;
+  }
+});
+modePositions.addEventListener('change', () => {
+  if (!modePositions.checked || !modeCastles.checked) modeAll.checked = false;
+  if (modePositions.checked && modeCastles.checked) modeAll.checked = true;
+});
+modeCastles.addEventListener('change', () => {
+  if (!modePositions.checked || !modeCastles.checked) modeAll.checked = false;
+  if (modePositions.checked && modeCastles.checked) modeAll.checked = true;
+});
+
+// Player count buttons
+document.getElementById('player-count-btns').addEventListener('click', (e) => {
+  const btn = e.target.closest('.player-count-btn');
+  if (!btn || isRolling) return;
+  document.querySelectorAll('.player-count-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  playerCount = parseInt(btn.dataset.count);
+});
+
+// Build slot elements (without colors, they will be assigned after randomization)
+function buildSlots() {
+  const posContainer = document.getElementById('slots-positions');
+  const castleContainer = document.getElementById('slots-castles');
+  posContainer.innerHTML = '';
+  castleContainer.innerHTML = '';
+
+  for (let i = 0; i < playerCount; i++) {
+    // Position slot (color will be set based on position number)
+    const ps = document.createElement('div');
+    ps.className = 'slot';
+    ps.innerHTML = `<div class="slot-value"><span class="slot-label">Игрок ${i + 1}</span><span class="num">—</span></div>`;
+    posContainer.appendChild(ps);
+
+    // Castle slot
+    const cs = document.createElement('div');
+    cs.className = 'slot castle-slot';
+    cs.innerHTML = `<div class="slot-value"><img src="" class="castle-slot-img" style="opacity:0"><span class="castle-name">—</span></div>`;
+    castleContainer.appendChild(cs);
+  }
+}
+
+// Generate RP phrase based on team composition
+function generateRPPhrase(castles) {
+  const castleNames = castles.map(c => c.name);
+  const goodCount = castleNames.filter(n => RP_PHRASES.good.includes(n)).length;
+  const evilCount = castleNames.filter(n => RP_PHRASES.evil.includes(n)).length;
+  const neutralCount = castleNames.filter(n => RP_PHRASES.neutral.includes(n)).length;
+  const hasConflux = castleNames.includes('Conflux');
+
+  let phrases = [];
+
+  // Special cases
+  if (playerCount === 2) {
+    phrases = RP_PHRASES.twoPlayers;
+  } else if (playerCount >= 6) {
+    phrases = RP_PHRASES.manyPlayers;
+  }
+  // All same alignment
+  else if (goodCount === playerCount) {
+    phrases = RP_PHRASES.allGood;
+  } else if (evilCount === playerCount) {
+    phrases = RP_PHRASES.allEvil;
+  } else if (neutralCount === playerCount) {
+    phrases = RP_PHRASES.allNeutral;
+  }
+  // Mixed with Conflux
+  else if (hasConflux && phrases.length === 0) {
+    phrases = RP_PHRASES.withConflux;
+  }
+  // Default mixed
+  else if (phrases.length === 0) {
+    phrases = RP_PHRASES.mixed;
+  }
+
+  return phrases[Math.floor(Math.random() * phrases.length)];
+}
+
+// Shuffle array (Fisher-Yates)
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Spin animation for position slot
+function spinPositionSlot(slot, finalValue, duration) {
+  return new Promise(resolve => {
+    const numEl = slot.querySelector('.num');
+    slot.classList.add('spinning');
+    slot.classList.remove('done');
+    // Remove any existing player-color classes
+    for (let i = 1; i <= 8; i++) {
+      slot.classList.remove(`player-color-${i}`);
+    }
+    const interval = 60;
+    let elapsed = 0;
+
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const randomPos = Math.floor(Math.random() * 6) + 3; // 3-8
+      numEl.textContent = randomPos;
+      // Temporarily show color during spin
+      for (let i = 1; i <= 8; i++) {
+        slot.classList.remove(`player-color-${i}`);
+      }
+      slot.classList.add(`player-color-${randomPos}`);
+
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        numEl.textContent = finalValue;
+        // Set final color based on final position
+        for (let i = 1; i <= 8; i++) {
+          slot.classList.remove(`player-color-${i}`);
+        }
+        slot.classList.add(`player-color-${finalValue}`);
+        numEl.classList.add('reveal');
+        slot.classList.remove('spinning');
+        slot.classList.add('done');
+        setTimeout(() => numEl.classList.remove('reveal'), 400);
+        resolve();
+      }
+    }, interval);
+  });
+}
+
+// Spin animation for castle slot
+function spinCastleSlot(slot, finalCastle, duration) {
+  return new Promise(resolve => {
+    const imgEl = slot.querySelector('.castle-slot-img');
+    const nameEl = slot.querySelector('.castle-name');
+    slot.classList.add('spinning');
+    slot.classList.remove('done');
+    imgEl.style.opacity = '1';
+    const interval = 80;
+    let elapsed = 0;
+
+    const availableCastles = CASTLES.filter(c => enabledCastles.has(c.id));
+
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const rc = availableCastles[Math.floor(Math.random() * availableCastles.length)];
+      imgEl.src = rc.img;
+      nameEl.textContent = rc.name;
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        imgEl.src = finalCastle.img;
+        nameEl.textContent = finalCastle.name;
+        imgEl.classList.add('reveal');
+        nameEl.classList.add('reveal');
+        slot.classList.remove('spinning');
+        slot.classList.add('done');
+        setTimeout(() => {
+          imgEl.classList.remove('reveal');
+          nameEl.classList.remove('reveal');
+        }, 400);
+        resolve();
+      }
+    }, interval);
+  });
+}
+
+// Main roll
+async function roll() {
+  if (isRolling) return;
+
+  // Initialize audio on first interaction
+  initAudio();
+
+  const doPositions = modePositions.checked;
+  const doCastles = modeCastles.checked;
+  const errorEl = document.getElementById('error-msg');
+  errorEl.textContent = '';
+
+  if (!doPositions && !doCastles) {
+    errorEl.textContent = 'Выберите хотя бы один режим рандома';
+    return;
+  }
+
+  if (doCastles && enabledCastles.size === 0) {
+    errorEl.textContent = 'Выберите хотя бы один замок';
+    return;
+  }
+
+  if (doPositions && enabledPositions.size === 0) {
+    errorEl.textContent = 'Выберите хотя бы одну позицию';
+    return;
+  }
+
+  if (doPositions && playerCount > enabledPositions.size) {
+    errorEl.textContent = `Недостаточно позиций: выбрано ${enabledPositions.size}, нужно ${playerCount}`;
+    return;
+  }
+
+  isRolling = true;
+  document.getElementById('btn-roll').disabled = true;
+
+  // Show results panel
+  const resultsPanel = document.getElementById('results-panel');
+  resultsPanel.classList.add('active');
+
+  buildSlots();
+
+  const groupPos = document.getElementById('group-positions');
+  const groupCas = document.getElementById('group-castles');
+  const rpQuote = document.getElementById('rp-quote');
+  groupPos.classList.remove('visible');
+  groupCas.classList.remove('visible');
+  rpQuote.classList.remove('visible');
+  groupPos.style.display = doPositions ? 'block' : 'none';
+  groupCas.style.display = doCastles ? 'block' : 'none';
+
+  // Progress bar
+  const progContainer = document.getElementById('progress-container');
+  const progBar = document.getElementById('progress-bar');
+  progContainer.classList.add('active');
+  progBar.style.width = '0%';
+
+  const totalSteps = (doPositions ? playerCount : 0) + (doCastles ? playerCount : 0);
+  let completedSteps = 0;
+
+  function updateProgress() {
+    completedSteps++;
+    progBar.style.width = (completedSteps / totalSteps * 100) + '%';
+  }
+
+  // Generate random positions from enabled ones
+  const allPositions = Array.from(enabledPositions);
+  const positions = shuffle(allPositions).slice(0, playerCount);
+
+  // Generate random UNIQUE castles from enabled ones
+  const availableCastles = CASTLES.filter(c => enabledCastles.has(c.id));
+  let castles;
+  if (playerCount <= availableCastles.length) {
+    // Enough castles - pick unique ones
+    castles = shuffle(availableCastles).slice(0, playerCount);
+  } else {
+    // Not enough castles - can't guarantee uniqueness, but try to minimize repeats
+    castles = shuffle([...availableCastles, ...availableCastles]).slice(0, playerCount);
+  }
+
+  // Animate positions
+  if (doPositions) {
+    groupPos.classList.add('visible');
+    const posSlots = document.querySelectorAll('#slots-positions .slot');
+    for (let i = 0; i < playerCount; i++) {
+      const duration = 800 + i * 300 + Math.random() * 400;
+      // Play dice rolling sound
+      playRollingSound(duration);
+      await spinPositionSlot(posSlots[i], positions[i], duration);
+      updateProgress();
+      await sleep(150);
+    }
+  }
+
+  // Animate castles
+  if (doCastles) {
+    await sleep(300);
+    groupCas.classList.add('visible');
+    const casSlots = document.querySelectorAll('#slots-castles .slot');
+    for (let i = 0; i < playerCount; i++) {
+      const duration = 900 + i * 350 + Math.random() * 400;
+      // Play dice rolling sound
+      playRollingSound(duration);
+      await spinCastleSlot(casSlots[i], castles[i], duration);
+      updateProgress();
+      await sleep(150);
+    }
+  }
+
+  await sleep(500);
+  progContainer.classList.remove('active');
+
+  // Show RP quote if castles mode was active
+  if (doCastles) {
+    const rpQuote = document.getElementById('rp-quote');
+    const phrase = generateRPPhrase(castles);
+    rpQuote.textContent = phrase;
+    await sleep(300);
+    rpQuote.classList.add('visible');
+  }
+
+  isRolling = false;
+  document.getElementById('btn-roll').disabled = false;
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// Init
+buildPositionGrid();
+buildCastleGrid();
+buildSlots();
+</script>
+</body>
+</html>
